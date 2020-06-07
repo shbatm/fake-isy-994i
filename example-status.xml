@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nodes>
+<node id="ZW005_104">
+<property id="ST" value="100" formatted="On" uom="78"/>
+</node>
+<node id="ZW005_1">
+<property id="BATLVL" value="100" formatted="100%" uom="51"/>
+</node>
+</nodes>

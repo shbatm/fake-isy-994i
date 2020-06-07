@@ -36,7 +36,10 @@ ISYServer.prototype.CONFIG_USERNAME = 'userName';
 ISYServer.prototype.CONFIG_PASSWORD = 'password';
 ISYServer.prototype.CONFIG_REQUIRE_AUTH = 'requireAuth';
 ISYServer.prototype.CONFIG_LOGGER_ENABLED = 'loggerEnabled';
+ISYServer.prototype.CONFIG_CONFIG_FILE = 'configFile';
 ISYServer.prototype.CONFIG_NODE_FILE = 'nodeFile';
+ISYServer.prototype.CONFIG_STATUS_FILE = 'statusFile';
+ISYServer.prototype.CONFIG_PROGRAMS_FILE = 'programsFile';
 ISYServer.prototype.CONFIG_ELK_STATUS_FILE = 'elkStatusFile';
 ISYServer.prototype.CONFIG_ELK_TOPOLOGY_FILE = 'elkTopologyFile';
 ISYServer.prototype.CONFIG_LOG_RESPONSE_BODY = 'logResponseBody';
@@ -48,16 +51,19 @@ ISYServer.prototype.CONFIG_VARIABLE_FILE_1 = "variable1File";
 ISYServer.prototype.CONFIG_VARIABLE_FILE_2 = "variable2File";
 
 ISYServer.prototype.loadConfig = function(config) {
-    
+
     this.configSettings = [
         // Logger should always be the first setting, used to set default of logger below this block
-        { name: this.CONFIG_LOGGER_ENABLED, default: true },        
+        { name: this.CONFIG_LOGGER_ENABLED, default: true },
         { name: this.CONFIG_ELK_ENABLED, default: true },
         { name: this.CONFIG_EXTENDED_ERRORS, default: true },
         { name: this.CONFIG_USERNAME, default: 'admin' },
         { name: this.CONFIG_PASSWORD, default: 'password' },
         { name: this.CONFIG_REQUIRE_AUTH, default: true },
+        { name: this.CONFIG_CONFIG_FILE, default: './example-config.xml' },
         { name: this.CONFIG_NODE_FILE, default: './example-nodes.xml' },
+        { name: this.CONFIG_STATUS_FILE, default: './example-status.xml' },
+        { name: this.CONFIG_PROGRAMS_FILE, default: './example-programs.xml' },
         { name: this.CONFIG_ELK_STATUS_FILE, default: './example-elk-status.xml' },
         { name: this.CONFIG_ELK_TOPOLOGY_FILE, default: './example-elk-topology.xml' },
         { name: this.CONFIG_SCENE_FILE, default: './example-scenes.xml' },
@@ -68,21 +74,21 @@ ISYServer.prototype.loadConfig = function(config) {
         { name: this.CONFIG_LOG_WEBSOCKET_NOTIFICATION, default: true},
         { name: this.CONFIG_FAIL_VARIABLE_CALLS, default: false }
     ];
-    
+
     // Special case logging as we need to setup logging BEFORE loading config so we can log setting results
     if(config != undefined && config.loggerEnabled != undefined) {
         setLogEnabled(config.loggerEnabled);
     } else {
         setLogEnabled(this.configSettings[0].default);
     }
-    
+
     log('Configuration:');
-    
+
     for(var configIndex = 0; configIndex < this.configSettings.length; configIndex++) {
         if(config == undefined || config[this.configSettings[configIndex].name] == undefined) {
             this.setConfigSetting(this.configSettings[configIndex].name, this.configSettings[configIndex].default);
         } else {
-            this.setConfigSetting(this.configSettings[configIndex].name, config[this.configSettings[configIndex].name]);            
+            this.setConfigSetting(this.configSettings[configIndex].name, config[this.configSettings[configIndex].name]);
         }
         log(this.configSettings[configIndex].name+': '+this.getConfigSetting(this.configSettings[configIndex].name));
     }
@@ -93,19 +99,19 @@ ISYServer.prototype.getConfigSetting = function(settingName) {
 }
 
 ISYServer.prototype.setConfigSetting = function(settingName, value) {
-    this.config[settingName] = value;    
+    this.config[settingName] = value;
 }
 
 ISYServer.prototype.buildCommandResponse = function(res, resultSuccess, resultCode, extended) {
     this.setupResponseHeaders(res, resultCode);
-    var resultString = 
+    var resultString =
         '<?xml version="1.0" encoding="UTF-8"?>\r\n'+
         '<RestResponse succeeded="'+resultSuccess+   '">\r\n'+
         '    <status>'+resultCode+'</status>\r\n';
     if(this.getConfigSetting(this.CONFIG_EXTENDED_ERRORS) && extended != undefined && extended != null) {
         resultString += '    <extended>'+extended+'</extended>\r\n';
     }
-    resultString += '</RestResponse>\r\n'; 
+    resultString += '</RestResponse>\r\n';
     if(this.getConfigSetting(this.CONFIG_LOG_RESPONSE_BODY)) {
         log('Response Body: '+resultString);
     }
@@ -145,8 +151,8 @@ ISYServer.prototype.setupResponseHeaders = function(res, resultCode) {
     res.set('WWW-Authenticate','Basic realm="/"');
     res.set('Last-Modified', new Date());
     res.set('Connection','Keep-Alive');
-    res.set('Content-Type', 'text/xml; charset=UTF-8');    
-    
+    res.set('Content-Type', 'text/xml; charset=UTF-8');
+
     res.status(resultCode);
 }
 
@@ -154,25 +160,25 @@ ISYServer.prototype.handleElkStatusRequest = function(req,res) {
     this.logRequestStartDetails(req);
     this.setupResponseHeaders(res,200);
     res.send(this.elkStatus.getStatus());
-    this.logRequestEndDetails(res);    
+    this.logRequestEndDetails(res);
 }
 
 ISYServer.prototype.handleElkTopologyRequest = function(req,res) {
-    this.logRequestStartDetails(req);    
+    this.logRequestStartDetails(req);
     this.setupResponseHeaders(res,200);
     if(this.getConfigSetting(this.CONFIG_LOG_RESPONSE_BODY)) {
         log('Response Body: '+this.elkTopology);
     }
     res.send(this.elkStatus.getTopology());
-    this.logRequestEndDetails(res);    
+    this.logRequestEndDetails(res);
 }
 
 ISYServer.prototype.handleNodesRequest = function(req,res) {
-    this.logRequestStartDetails(req);    
+    this.logRequestStartDetails(req);
     this.setupResponseHeaders(res,200);
     if(this.getConfigSetting(this.CONFIG_LOG_RESPONSE_BODY)) {
         log(this.rootDoc.toString());
-    } 
+    }
     res.send(this.rootDoc.toString());
     this.logRequestEndDetails(res);
 }
@@ -238,7 +244,7 @@ ISYServer.prototype.handleSceneRequest = function(req, res) {
 }
 
 ISYServer.prototype.logRequestStartDetails = function(req) {
-    log("REQUEST. Source="+req.ip+" Url: "+req.originalUrl);   
+    log("REQUEST. Source="+req.ip+" Url: "+req.originalUrl);
 }
 
 ISYServer.prototype.logRequestEndDetails = function(res) {
@@ -322,8 +328,8 @@ ISYServer.prototype.handleCommandRequest = function(req, res) {
         catch(err) {
             this.buildCommandResponse(res, false, 500, err);
         }
-    }    
-    this.logRequestEndDetails(res);    
+    }
+    this.logRequestEndDetails(res);
 }
 
 ISYServer.prototype.handleConfigureRequest = function(req, res) {
@@ -336,9 +342,9 @@ ISYServer.prototype.handleConfigureRequest = function(req, res) {
         return;
     }
     if(this.getConfigSetting(configName)==undefined) {
-        this.buildCommandResponse(res, false, 404, "Unknown config value"); 
-        this.logRequestEndDetails(res);                 
-        return;      
+        this.buildCommandResponse(res, false, 404, "Unknown config value");
+        this.logRequestEndDetails(res);
+        return;
     }
     var valueToSet = configValue;
     if(valueToSet == 'true') {
@@ -347,17 +353,17 @@ ISYServer.prototype.handleConfigureRequest = function(req, res) {
         valueToSet = false;
     } else if(!isNaN(valueToSet)) {
         valueToSet = Number(valueToSet);
-    } 
+    }
     this.setConfigSetting(configName, valueToSet);
-    this.buildCommandResponse(res, true, 200, "Configuration updated");     
-    this.logRequestEndDetails(res);        
+    this.buildCommandResponse(res, true, 200, "Configuration updated");
+    this.logRequestEndDetails(res);
 }
 
 ISYServer.prototype.resetState = function() {
     this.webSocketClientList = [];
     this.sequenceNumber = 0;
     this.webSubscriptions = [];
-    this.loadNodeState();    
+    this.loadNodeState();
 }
 
 ISYServer.prototype.handleAddWebSubscription = function(req,res) {
@@ -413,7 +419,7 @@ ISYServer.prototype.loadNodeState = function() {
     // Ensure we are clean
     this.nodeIndex = {};
     this.nodeList = [];
-    
+
     var fileData = fs.readFileSync(this.getConfigSetting(this.CONFIG_NODE_FILE), 'ascii');
     this.rootDoc = new parser().parseFromString(fileData.substring(2, fileData.length));
 
@@ -427,35 +433,53 @@ ISYServer.prototype.loadNodeState = function() {
     this.varData['2'] = fs.readFileSync(this.getConfigSetting(this.CONFIG_VARIABLE_FILE_2), 'ascii');
     this.loadVariables(this.varData['2'],'2');
 
+    this.programsIndex = {};
+    this.programsList = [];
+
+    var progFileData = fs.readFileSync(this.getConfigSetting(this.CONFIG_PROGRAMS_FILE), 'ascii');
+    this.programsDoc = new parser().parseFromString(progFileData.substring(2, progFileData.length));
+
+    var configFileData = fs.readFileSync(this.getConfigSetting(this.CONFIG_CONFIG_FILE), 'ascii');
+    this.configDoc = new parser().parseFromString(configFileData.substring(2, configFileData.length));
+
+
+    var statusFileData = fs.readFileSync(
+      this.getConfigSetting(this.CONFIG_STATUS_FILE),
+      "ascii"
+    );
+    this.statusDoc = new parser().parseFromString(
+      statusFileData.substring(2, statusFileData.length)
+    );
+
     // Load folders
     var folders  = this.rootDoc.getElementsByTagName('folder');
     for(var i = 0; i < folders.length; i++) {
         var newNode = new FolderNode(folders[i]);
         this.nodeIndex[newNode.getAddress()] = newNode;
         this.nodeList.push(newNode);
-    }    
-    
+    }
+
     // Load devices
     var devices = this.rootDoc.getElementsByTagName('node');
     for(var j = 0; j < devices.length; j++) {
         var newNode = new DeviceNode(devices[j]);
         this.nodeIndex[newNode.getAddress()] = newNode;
-        this.nodeList.push(newNode);        
+        this.nodeList.push(newNode);
     }
- 
+
     // Load scenes
     var scenes  = this.rootDoc.getElementsByTagName('group');
     for(var i = 0; i < scenes.length; i++) {
         var newScene = new SceneNode(scenes[i], this.nodeIndex);
         this.nodeIndex[newScene.getAddress()] = newScene;
-        this.nodeList.push(newScene);        
+        this.nodeList.push(newScene);
     }
 
     this.elkStatus = new ElkStatus(this.getConfigSetting(this.CONFIG_ELK_STATUS_FILE),this.getConfigSetting(this.CONFIG_ELK_TOPOLOGY_FILE))
 }
 
 ISYServer.prototype.buildUnauthorizedResponse = function(res) {
-    res.set('WWW-Authenticate', 'Basic realm=Authorization Required');    
+    res.set('WWW-Authenticate', 'Basic realm=Authorization Required');
     res.sendStatus(401);
 }
 
@@ -475,7 +499,7 @@ ISYServer.prototype.authHandler = function (req, res, next) {
     if (user.name === this.getConfigSetting(this.CONFIG_USERNAME) && user.pass === this.getConfigSetting(this.CONFIG_PASSWORD)) {
         return next();
     } else {
-        this.buildUnauthorizedResponse(res);        
+        this.buildUnauthorizedResponse(res);
         log('ERROR: Denied request, bad credentials user='+user.name+' password='+user.pass);
         return res;
     }
@@ -483,7 +507,7 @@ ISYServer.prototype.authHandler = function (req, res, next) {
 
 ISYServer.prototype.getNextSequenceNumber = function() {
     this.sequenceNumber++;
-    return this.sequenceNumber;    
+    return this.sequenceNumber;
 }
 
 ISYServer.prototype.buildDeviceUpdate = function(device) {
@@ -675,7 +699,7 @@ ISYServer.prototype.sendInitialState = function(ws) {
                 this.sendDeviceUpdate(ws, device);
             }
         }
-    }    
+    }
 }
 
 ISYServer.prototype.sendInitialWebState = function(endpoint) {
@@ -896,15 +920,49 @@ ISYServer.prototype.handleVariableDefinitionsRequest = function(req,res) {
 
 }
 
+ISYServer.prototype.handleProgramsRequest = function (req, res) {
+    this.logRequestStartDetails(req);
+    this.setupResponseHeaders(res, 200);
+    if (this.getConfigSetting(this.CONFIG_LOG_RESPONSE_BODY)) {
+        log(this.programsDoc.toString());
+    }
+    res.send(this.programsDoc.toString());
+    this.logRequestEndDetails(res);
+}
+
+ISYServer.prototype.handleConfigRequest = function (req, res) {
+    this.logRequestStartDetails(req);
+    this.setupResponseHeaders(res, 200);
+    if (this.getConfigSetting(this.CONFIG_LOG_RESPONSE_BODY)) {
+        log(this.configDoc.toString());
+    }
+    res.send(this.configDoc.toString());
+    this.logRequestEndDetails(res);
+}
+
+ISYServer.prototype.handleStatusRequest = function (req, res) {
+    this.logRequestStartDetails(req);
+    this.setupResponseHeaders(res, 200);
+    if (this.getConfigSetting(this.CONFIG_LOG_RESPONSE_BODY)) {
+        log(this.statusDoc.toString());
+    }
+    res.send(this.statusDoc.toString());
+    this.logRequestEndDetails(res);
+}
+
 ISYServer.prototype.configureRoutes = function() {
     var that = this;
-    
+
     this.app.get('/config/reset', function(req, res) {
         that.handleResetNodesRequest(req,res);
     });
-    
+
     this.app.get('/config/:configName/:configValue', function(req, res) {
         that.handleConfigureRequest(req,res);
+    });
+
+    this.app.get('/rest/config', function(req, res) {
+        that.handleConfigRequest(req,res);
     });
 
     this.app.get('/rest/nodes/scenes', this.authHandler.bind(this), function (req, res) {
@@ -925,6 +983,10 @@ ISYServer.prototype.configureRoutes = function() {
 
     this.app.get('/rest/nodes', this.authHandler.bind(this), function (req, res) {
         that.handleNodesRequest(req,res);
+    });
+
+    this.app.get('/rest/status', this.authHandler.bind(this), function (req, res) {
+        that.handleStatusRequest(req,res);
     });
 
     this.app.get('/rest/vars/get/:type/:id', this.authHandler.bind(this), function (req, res) {
@@ -952,8 +1014,10 @@ ISYServer.prototype.configureRoutes = function() {
        that.handleAddWebSubscription(req,res)
     });
 
+    this.app.get('/rest/programs', this.authHandler.bind(this), function (req, res) {
+        that.handleProgramsRequest(req, res);
+    })
 
-    
     this.app.get('/rest/elk/get/topology', this.authHandler.bind(this), function (req, res) {
         if(!that.getConfigSetting(that.CONFIG_ELK_ENABLED)) {
             res.status(500).send('Elk is disabled');
@@ -969,7 +1033,7 @@ ISYServer.prototype.configureRoutes = function() {
             that.handleElkStatusRequest(req,res);
         }
     });
-        
+
 }
 
 ISYServer.prototype.removeSocket = function(ws) {
@@ -992,26 +1056,26 @@ ISYServer.prototype.start = function() {
         this.ssdpServer.announce({ name: 'urn:udi-com:device:X_Insteon_Lighting_Device:1', port: port});
 
         console.log('fake-isy-994i app listening at http://%s:%s', host, port);
-        
+
         server.on('upgrade', function(request, socket, body) {
             log('WEBSOCKET: Incoming upgrade request..');
             if (WebSocket.isWebSocket(request)) {
                 var ws = new WebSocket(request, socket, body);
-                log('WEBSOCKET: Incoming websocket connection request ver='+ws.version+' proto='+ws.protocol);                  
-                
+                log('WEBSOCKET: Incoming websocket connection request ver='+ws.version+' proto='+ws.protocol);
+
                 ws.on('close', function(event) {
                     log('WEBSOCKET: close event code='+event.code+" reason="+event.reason);
                     that.removeSocket(ws);
                     ws = null;
                 });
-                
-                that.webSocketClientList.push(ws); 
-                that.sendInitialState(ws);                
+
+                that.webSocketClientList.push(ws);
+                that.sendInitialState(ws);
             } else {
                 log('WEBSOCKET: IGNORED: Upgrade request ignored, not a websocket');
             }
-        });  
-    });    
+        });
+    });
 }
 
 exports.ISYServer = ISYServer;

@@ -2068,26 +2068,45 @@
             <cat>129</cat>
         </devtype>
     </node>
-    <node flag="128">
-        <address>ZW005_1</address>
-        <name>Deck Door Lock</name>
-        <family>4</family>
-        <parent type="3">42035</parent>
-        <type>4.64.3.0</type>
-        <enabled>true</enabled>
-        <deviceClass>0</deviceClass>
-        <wattage>0</wattage>
-        <dcPeriod>0</dcPeriod>
-        <pnode>ZW005_1</pnode>
-        <sgid>1</sgid>
-        <devtype>
-            <gen>4.64.3</gen>
-            <mfg>297.2.0</mfg>
-            <cat>111</cat>
-            <model>5</model>
-        </devtype>
-        <property id="ST" value="100" formatted="Locked" uom="11"/>
-    </node>
+    <node flag="0" nodeDefId="UZW00EE">
+<address>ZW005_104</address>
+<name>ZW 005 Binary Sensor 1</name>
+<family>4</family>
+<type>4.7.1.0</type>
+<enabled>true</enabled>
+<deviceClass>0</deviceClass>
+<wattage>0</wattage>
+<dcPeriod>0</dcPeriod>
+<startDelay>0</startDelay>
+<endDelay>0</endDelay>
+<pnode>ZW005_1</pnode>
+<sgid>104</sgid>
+<devtype>
+<gen>4.7.1</gen>
+<mfg>410.3.3</mfg>
+<cat>104</cat>
+</devtype>
+<property id="ST" value="100" formatted="On" uom="78"/>
+</node>
+<node flag="128" nodeDefId="UZW00EB">
+<address>ZW005_1</address>
+<name>ZW 005 Notify Sensor</name>
+<family>4</family>
+<type>4.7.1.0</type>
+<enabled>true</enabled>
+<deviceClass>0</deviceClass>
+<wattage>0</wattage>
+<dcPeriod>0</dcPeriod>
+<startDelay>0</startDelay>
+<endDelay>0</endDelay>
+<pnode>ZW005_1</pnode>
+<sgid>1</sgid>
+<devtype>
+<gen>4.7.1</gen>
+<mfg>410.3.3</mfg>
+<cat>185</cat>
+</devtype>
+</node>
     <group flag="12">
         <address>00:21:b9:02:0a:52</address>
         <name>My Lighting</name>
